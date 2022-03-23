@@ -15,24 +15,45 @@ var (
 	publicKey []byte
 )
 
-type JWT struct {
-	parsePrivateKey crypto.PrivateKey
-	parsePublicKey  crypto.PrivateKey
+type PrivateKey struct {
+	crypto.PrivateKey
+}
+type PublicKey struct {
+	crypto.PublicKey
 }
 
-func New() (*JWT, error) {
+type JWT struct {
+	*PrivateKey
+	*PublicKey
+}
 
+func NewPrivateKey() (*PrivateKey, error) {
 	parsePrivateKey, err := jwt.ParseEdPrivateKeyFromPEM(privateKey)
 	if err != nil {
 		err = fmt.Errorf("signing token load private-key error: %w", err)
 		return nil, err
 	}
+	return &PrivateKey{parsePrivateKey}, nil
+}
+func NewPublicKey() (*PublicKey, error) {
 	parsePublicKey, err := jwt.ParseEdPublicKeyFromPEM(publicKey)
 	if err != nil {
 		err = fmt.Errorf("signing token load public-key error: %w", err)
 		return nil, err
 	}
-	return &JWT{parsePrivateKey, parsePublicKey}, nil
+	return &PublicKey{parsePublicKey}, nil
+}
+func New() (*JWT, error) {
+	privateKey, err := NewPrivateKey()
+	if err != nil {
+		return nil, err
+	}
+	publicKey, err := NewPublicKey()
+	if err != nil {
+		return nil, err
+	}
+	return &JWT{privateKey, publicKey}, nil
+
 }
 
 type AuthClaims struct {
@@ -40,7 +61,7 @@ type AuthClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (JWT *JWT) Sign(userId int64) (tokenString string, err error) {
+func (pk *PrivateKey) Sign(userId int64) (tokenString string, err error) {
 
 	// Create the Claims
 	claims := &AuthClaims{
@@ -59,20 +80,20 @@ func (JWT *JWT) Sign(userId int64) (tokenString string, err error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	fmt.Printf("SigningMethod: %#+v\n", token.Method)
-	tokenString, err = token.SignedString(JWT.parsePrivateKey)
+	tokenString, err = token.SignedString(pk.PrivateKey)
 	if err != nil {
 		err = fmt.Errorf("signing token error: %w", err)
 	}
 	return
 }
 
-func (JWT *JWT) Parse(tokenString string) (claims *AuthClaims, err error) {
+func (pk *PublicKey) Parse(tokenString string) (claims *AuthClaims, err error) {
 
 	claims = &AuthClaims{}
 	parser := jwt.NewParser(jwt.WithValidMethods([]string{jwt.SigningMethodEdDSA.Alg()}))
 	//parser := jwt.NewParser()
 	token, err := parser.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (key interface{}, err error) {
-		return JWT.parsePublicKey, nil
+		return pk.PublicKey, nil
 	})
 	if err == jwt.ErrTokenExpired {
 		return
