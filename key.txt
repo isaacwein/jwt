@@ -1,0 +1,15 @@
+
+// ECDSA
+// https://www.scottbrady91.com/jose/jwts-which-signing-algorithm-should-i-use
+// https://www.scottbrady91.com/openssl/creating-elliptical-curve-keys-using-openssl
+
+
+
+// ed25519 keys
+//
+//
+// https://stackoverflow.com/a/60704447/9100468
+openssl genpkey -algorithm ed25519 -out ed25519.private.pem
+//
+// https://superuser.com/questions/1319543/gen-pubkey-openssl-ed255190
+openssl pkey -in ed25519.private.pem -pubout -out ed25519.public.pem
