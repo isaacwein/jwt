@@ -1,6 +1,6 @@
 # jwt demo
 just a demo project how to use jwt sign and parse
-its based out of the library [golang-jwt v4](github.com/golang-jwt/jwt)
+its based out of the library [golang-jwt v4](https://github.com/golang-jwt/jwt)
 
 ### Demos
 #### Setup
