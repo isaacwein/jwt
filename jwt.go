@@ -11,6 +11,7 @@ import (
 var (
 	//go:embed ed25519.private.pem
 	privateKey []byte
+
 	//go:embed ed25519.public.pem
 	publicKey []byte
 )
@@ -27,6 +28,7 @@ type JWT struct {
 	*PublicKey
 }
 
+// NewPrivateKey is for signing tokens
 func NewPrivateKey() (*PrivateKey, error) {
 	parsePrivateKey, err := jwt.ParseEdPrivateKeyFromPEM(privateKey)
 	if err != nil {
@@ -35,6 +37,8 @@ func NewPrivateKey() (*PrivateKey, error) {
 	}
 	return &PrivateKey{parsePrivateKey}, nil
 }
+
+// NewPublicKey is for verifying tokens
 func NewPublicKey() (*PublicKey, error) {
 	parsePublicKey, err := jwt.ParseEdPublicKeyFromPEM(publicKey)
 	if err != nil {
@@ -43,24 +47,27 @@ func NewPublicKey() (*PublicKey, error) {
 	}
 	return &PublicKey{parsePublicKey}, nil
 }
+
 func New() (*JWT, error) {
-	privateKey, err := NewPrivateKey()
+	private, err := NewPrivateKey()
 	if err != nil {
 		return nil, err
 	}
-	publicKey, err := NewPublicKey()
+	public, err := NewPublicKey()
 	if err != nil {
 		return nil, err
 	}
-	return &JWT{privateKey, publicKey}, nil
+	return &JWT{private, public}, nil
 
 }
 
 type AuthClaims struct {
 	UserId int64 `json:"user_id"`
+	//add all custom fields
 	jwt.RegisteredClaims
 }
 
+// Sign is for signing new tokens
 func (pk *PrivateKey) Sign(userId int64) (tokenString string, err error) {
 
 	// Create the Claims
@@ -87,6 +94,7 @@ func (pk *PrivateKey) Sign(userId int64) (tokenString string, err error) {
 	return
 }
 
+// Parse is for verifying tokens
 func (pk *PublicKey) Parse(tokenString string) (claims *AuthClaims, err error) {
 
 	claims = &AuthClaims{}
